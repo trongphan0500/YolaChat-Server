@@ -113,11 +113,12 @@ module.exports.logOut = (req, res, next) => {
 module.exports.updateUser = async (req, res, next) => {
     console.log("Update User");
     try {
-        const { avartar, userName, gender, date, phonenumber } = req.body;
+        const { avatarImage, userName, gender, date, phonenumber } = req.body;
         // console.log(date);
         // console.log(date.slice(0, 10));
         const filter = { phonenumber: phonenumber };
         const update = {
+            avatarImage: avatarImage,
             username: userName,
             gender: gender,
             DateOfBirth: date,

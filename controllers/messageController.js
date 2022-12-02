@@ -63,69 +63,6 @@ const upload = (bucketName) =>
         }),
     });
 
-module.exports.getMessages = async (req, res, next) => {
-    // console.log("get MSG");
-    try {
-        const { from, to } = req.body;
-
-        const messages = await Messages.find({
-            users: {
-                $all: [from, to],
-            },
-        }).sort({ createdAt: 1 });
-        // console.log(messages);
-        const projectedMessages = messages.map((msg) => {
-            return {
-                id: msg._id,
-                fromSelf: msg.sender.toString() === from,
-                message: msg.message.text,
-                createdAt: msg.createdAt,
-                reaction: msg.message.reaction,
-                avatarImage: msg.avatarImage,
-                image: msg.message.image,
-                files: msg.message.files,
-                deletedFromSelf: msg.deleted.fromSelf,
-                deletedToAll: msg.deleted.toAll,
-            };
-        });
-        res.json(projectedMessages);
-    } catch (ex) {
-        next(ex);
-    }
-};
-module.exports.getMessagesRoom = async (req, res, next) => {
-    // console.log("get MSG");
-    try {
-        const { id, from } = req.body;
-
-        const messages = await Messages.find({
-            users: {
-                $all: [id],
-            },
-        }).sort({ createdAt: 1 });
-
-        const projectedMessages = messages.map((msg) => {
-            // console.log(msg.deleted.toAll);
-            return {
-                id: msg._id,
-                fromSelf: msg.sender.toString() === from,
-                message: msg.message.text,
-                createdAt: msg.createdAt,
-                reaction: msg.message.reaction,
-                namesend: msg.namesend,
-                avatarImage: msg.avatarImage,
-                image: msg.message.image,
-                files: msg.message.files,
-                deletedFromSelf: msg.deleted.fromSelf,
-                deletedToAll: msg.deleted.toAll,
-            };
-        });
-        res.json(projectedMessages);
-    } catch (ex) {
-        next(ex);
-    }
-};
-
 module.exports.addMessage = async (req, res, next) => {
     try {
         const { from, to, message, namesend, avatarImage } = req.body;
@@ -212,7 +149,7 @@ module.exports.fileMessageSend = (req, res, next) => {
     const uploadMultle = upload("appchat-picture-profile").array("images", 3);
 
     uploadMultle(req, res, async (error) => {
-        // console.log(req.files);
+        console.log(req.files);
         if (error) {
             console.log("errors", error);
         } else {
@@ -262,7 +199,173 @@ module.exports.addreaction = async (req, res, next) => {
     console.log("updata reaction");
     const { id, reaction } = req.body;
     const filter = { _id: id.id };
-    const update = { message: {text:id.message,reaction:reaction} };
-    const data = await Messages.findOneAndUpdate(filter,update, {new:true})
+    const update = { message: { text: id.message, reaction: reaction } };
+    const data = await Messages.findOneAndUpdate(filter, update, { new: true });
     // console.log(data);
-  };
+};
+
+module.exports.setAvartar = async (req, res, next) => {
+    console.log("Connected to SendAvatar ");
+    const form = formidable();
+
+    form.parse(req, (err, fields, files) => {
+        console.log("Into dataForm");
+        const { senderName, imageName, reseverId, images, file, avatarImage } =
+            fields;
+    });
+    const uploadMultle = upload("appchat-picture-profile").array("images", 3);
+
+    uploadMultle(req, res, async (error) => {
+        console.log(req.files[0]);
+        if (error) {
+            console.log("errors", error);
+        } else {
+            console.log("Into create Message");
+
+            res.status(200).json({ data: req.files[0].location });
+        }
+    });
+};
+
+module.exports.getMessages = async (req, res, next) => {
+    // console.log("get MSG");
+    try {
+        const { from, to } = req.body;
+
+        const messages = await Messages.find({
+            users: {
+                $all: [from, to],
+            },
+        }).sort({ createdAt: 1 });
+        // console.log(messages);
+        const projectedMessages = messages.map((msg) => {
+            return {
+                id: msg._id,
+                fromSelf: msg.sender.toString() === from,
+                message: msg.message.text,
+                createdAt: msg.createdAt.slice(16, 21),
+                reaction: msg.message.reaction,
+                avatarImage: msg.avatarImage,
+                image: msg.message.image,
+                files: msg.message.files,
+                deletedFromSelf: msg.deleted.fromSelf,
+                deletedToAll: msg.deleted.toAll,
+            };
+        });
+        res.json(projectedMessages);
+    } catch (ex) {
+        next(ex);
+    }
+};
+module.exports.getnewMessages = async (req, res, next) => {
+    // console.log("get MSG");
+    const { from, to } = req.body;
+    try {
+        const messagess = await Messages.find({
+            users: {
+                $all: [from, to],
+            },
+        })
+            .sort({ createdAt: -1 })
+            .limit(1);
+        const messages = messagess[0];
+        var nowdate = Date();
+
+        console.log(messages);
+        if (messages) {
+            console.log(messages);
+
+            const date = messages.createdAt.slice(16, 21);
+            const projectedMessages = {
+                id: messages._id,
+                fromSelf: messages.sender.toString() === from,
+                message: messages.message.text,
+                createdAt: date,
+                reaction: messages.message.reaction,
+                avatarImage: messages.avatarImage,
+                image: messages.message.image,
+                files: messages.message.files,
+                deletedFromSelf: messages.deleted.fromSelf,
+                deletedToAll: messages.deleted.toAll,
+            };
+
+            res.json(projectedMessages);
+        } else {
+            res.json(undefined);
+        }
+    } catch (ex) {
+        next(ex);
+    }
+};
+
+module.exports.getnewMessagesRoom = async (req, res, next) => {
+    try {
+        const { id, from } = req.body;
+
+        const messagess = await Messages.find({
+            users: {
+                $all: [id],
+            },
+        })
+            .sort({ createdAt: -1 })
+            .limit(1);
+        const messages = messagess[0];
+        if (messages) {
+            var date;
+            var nowdate = Date();
+
+            date = messages.createdAt.slice(16, 21);
+            const projectedMessages = {
+                id: messages._id,
+                fromSelf: messages.sender.toString() === from,
+                message: messages.message.text,
+                createdAt: date,
+                reaction: messages.message.reaction,
+                avatarImage: messages.avatarImage,
+                image: messages.message.image,
+                files: messages.message.files,
+                deletedFromSelf: messages.deleted.fromSelf,
+                deletedToAll: messages.deleted.toAll,
+                namesend: messages.namesend,
+            };
+
+            res.json(projectedMessages);
+        } else {
+            res.json(undefined);
+        }
+    } catch (ex) {
+        next(ex);
+    }
+};
+module.exports.getMessagesRoom = async (req, res, next) => {
+    // console.log("get MSG");
+    try {
+        const { id, from } = req.body;
+
+        const messages = await Messages.find({
+            users: {
+                $all: [id],
+            },
+        }).sort({ createdAt: 1 });
+
+        const projectedMessages = messages.map((msg) => {
+            // console.log(msg.deleted.toAll);
+            return {
+                id: msg._id,
+                fromSelf: msg.sender.toString() === from,
+                message: msg.message.text,
+                createdAt: msg.createdAt.slice(16, 21),
+                reaction: msg.message.reaction,
+                namesend: msg.namesend,
+                avatarImage: msg.avatarImage,
+                image: msg.message.image,
+                files: msg.message.files,
+                deletedFromSelf: msg.deleted.fromSelf,
+                deletedToAll: msg.deleted.toAll,
+            };
+        });
+        res.json(projectedMessages);
+    } catch (ex) {
+        next(ex);
+    }
+};

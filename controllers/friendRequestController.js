@@ -154,6 +154,15 @@ module.exports.unFriend = async (req, res, next) => {
         const update2 = { friendId: request2.friendId };
         const friend2 = await Friend.findOneAndUpdate(filter2, update2);
 
+        // Lấy ra trạng thái đã gửi lời mời kết bạn hay chưa
+        console.log(senderPhoneNumber);
+        console.log(receivedPhoneNumber);
+        const status = await FriendRequest.findOne({
+            senderId: senderPhoneNumber,
+            received: receivedPhoneNumber,
+        });
+        console.log(status.agreed);
+
         // Lấy ra mảng các user trong list friend
         const lisyId = [];
         const listCurruentFriend = [];
@@ -190,7 +199,10 @@ module.exports.unFriend = async (req, res, next) => {
         const remove2 = await RequestFriend.deleteOne(filterRemove2);
 
         res.status(200).json({
+            // Danh sách các user trong list friend
             data: uniqueChars,
+            //Trạng thái đã gửi lời mời hay chưa
+            data2: status.agreed,
         });
     } catch (error) {}
 };
